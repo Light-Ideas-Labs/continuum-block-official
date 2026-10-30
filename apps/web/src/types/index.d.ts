@@ -52,17 +52,43 @@ declare global {
     }>;
   }
 
+  interface TeacherStudent {
+    transactionId: string;
+    userId: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string;
+    imgUrl?: string;
+    purchaseTitle?: string;
+    purchaseImage?: string;
+    purchaseType?: "Course" | "Bootcamp";
+    status?: "Pending" | "AwaitingVerification" | "Completed" | "Failed" | "Refunded";
+    amount?: number;
+    currency?: string;
+    paymentProvider?: "Free" | "Stripe" | "M-Pesa" | "M-Pesa-PayBill" | "Co-op-Bank" | "PayPal" | "Flutterwave";
+    dateTime?: string;
+ }
+
   interface Transaction {
     _id: string;
     userId: string;
+    courseId: string;
+    bootcampId?: string;
+
+    amount: number; // Stored in cents
+    currency: string;
+
     transactionId: string;
     dateTime: string;
-    courseId: string;
-    paymentProvider: "Free" | "Stripe";
+
+    paymentProvider: "Free" | "Stripe" | "M-Pesa" | "M-Pesa-PayBill" | "Co-op-Bank" | "PayPal" | "Flutterwave";
+    status: "Pending" | "AwaitingVerification" | "Completed" | "Failed" | "Refunded";
+    paymentReference?: string;
     paymentMethodId?: string;
-    amount: number // Stored in cents
     savePaymentMethod?: boolean;
-    status: string;
+
+    createdAt: string;
+    updatedAt: string;
   }
 
   interface DateRange {
@@ -202,11 +228,6 @@ declare global {
   interface SharedNotificationSettingsProps {
     title?: string;
     subtitle?: string;
-  }
-
-  interface SelectedCourseProps {
-    course: Course;
-    handleEnrollNow: (courseId: string) => void;
   }
 
   interface ToolbarProps {

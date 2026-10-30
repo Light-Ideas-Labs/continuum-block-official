@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Edit, X, Plus } from "lucide-react";
+import { Edit, X, Plus, Eye, EyeOff } from "lucide-react";
 import { registerPlugin } from "filepond";
 import { FilePond } from "react-filepond";
 import "filepond/dist/filepond.min.css";
@@ -83,11 +83,36 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
   max,
 }) => {
   const { control } = useFormContext();
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const renderFormControl = (
     field: ControllerRenderProps<FieldValues, string>
   ) => {
     switch (type) {
+      case "password":
+        return (
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder={placeholder}
+              {...field}
+              className={`border-none bg-customgreys-primarybg p-4 pr-10 ${inputClassName}`}
+              disabled={disabled}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-customgreys-dirtyGrey hover:text-white-50"
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
+            </button>
+          </div>
+        );
       case "tel": // Handle 'tel' for phone numbers
         return (
           <div className="relative">
