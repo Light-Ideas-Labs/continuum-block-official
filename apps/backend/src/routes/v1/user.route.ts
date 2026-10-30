@@ -3,6 +3,8 @@ import { requireAuth } from "@clerk/express";
 
 // controller
 import { createUser, getUser, listUsers, syncUser, deleteUser, updateUser, promoteUserRole } from "../../modules/users/user.controller"
+import requireRole from "../../middlewares/requireRole";
+import { sensitiveActionLimiter } from "../../middlewares/rateLimiters";
 
 const router: Router = express.Router();
 
@@ -10,8 +12,8 @@ router.post("/create", createUser)
 router.get("/all-users",  requireAuth(), listUsers)
 router.get("/:userId",  requireAuth(), getUser)
 router.put("/:userId", requireAuth(), syncUser)
-router.put("/update/:userId", updateUser);
-router.put("/promote-role/:userId", requireAuth(), promoteUserRole)
+router.put("/update/:userId", requireAuth(), updateUser);
+router.put("/promote-role/:userId", sensitiveActionLimiter, requireAuth(), requireRole("admin"), promoteUserRole)
 router.delete("/delete/:userId", requireAuth(), deleteUser)
 
 export default router;

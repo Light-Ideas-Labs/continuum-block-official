@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
 import fs from "fs";
 
-import  { cloudinary } from "../../config/cloudinary.config";	
+import  { cloudinary } from "../../config/cloudinary.config";
 import Bootcamp from "./model";
-import Course from "../courses/model"; 
+import Course from "../courses/model";
 
 // Create a new bootcamp
 const createBootcamp = async (req: Request, res: Response): Promise<void> => {
