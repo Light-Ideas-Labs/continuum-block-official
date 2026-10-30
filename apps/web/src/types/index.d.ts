@@ -52,6 +52,26 @@ declare global {
     }>;
   }
 
+  interface InstructorSummary {
+    teacherId: string;
+    name: string;
+    imgUrl?: string;
+    courseCount: number;
+    bootcampCount: number;
+    studentCount: number;
+    avgRating: number;
+    categories: string[];
+  }
+
+  interface InstructorDetail extends InstructorSummary {
+    courses: Course[];
+    bootcamps?: Array<{
+      _id: string;
+      title: string;
+      image?: string;
+    }>;
+  }
+
   interface TeacherStudent {
     transactionId: string;
     userId: string;

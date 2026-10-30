@@ -292,6 +292,18 @@ export const api = createApi({
       providesTags: ["Users", "Courses", "Bootcamps"],
     }),
 
+    /* INSTRUCTORS */
+
+    listInstructors: build.query<InstructorSummary[], void>({
+      query: () => ({ url: "users/instructors" }),
+      providesTags: ["Users", "Courses", "Bootcamps"],
+    }),
+
+    getInstructor: build.query<InstructorDetail, string>({
+      query: (teacherId) => ({ url: `users/instructors/${teacherId}` }),
+      providesTags: (result, error, id) => [{ type: "Users", id }],
+    }),
+
     /* USER COURSE PROGRESS */
     getUserEnrolledCourses: build.query({
       query: (userId: string) => ({
@@ -459,6 +471,9 @@ export const {
   // useCreateStripePaymentIntentMutation,
 
   useGetTeacherStudentsQuery,
+
+  useListInstructorsQuery,
+  useGetInstructorQuery,
 
   useGetUserEnrolledCoursesQuery,
   useGetUserCourseProgressQuery,

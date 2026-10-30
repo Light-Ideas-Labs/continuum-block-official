@@ -73,6 +73,9 @@ const NonDashboardNavbar = () => {
             <Link href="/bootcamps" scroll={false} className="hover:text-white-50 transition-colors duration-200">
               Bootcamps
             </Link>
+            <Link href="/instructors" scroll={false} className="hover:text-white-50 transition-colors duration-200">
+              Instructors
+            </Link>
             <Link href="/#about" scroll={false} className="hover:text-white-50 transition-colors duration-200">
               About
             </Link>

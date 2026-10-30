@@ -4,6 +4,7 @@ import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { BookOpen, Layers, Users } from "lucide-react";
+import Link from "next/link";
 import Loading from "@/components/Loading";
 import AccordionSections from "@/components/AccordionSections";
 import { Badge } from "@/components/ui/badge";
@@ -94,7 +95,12 @@ const CourseDetailPage = () => {
           <section>
             <h2 className="mb-3 text-xl font-semibold text-white-100">About the instructor</h2>
             <div className="rounded-lg border border-customgreys-darkerGrey bg-customgreys-secondarybg p-4">
-              <p className="font-medium text-white-100">{course.teacherName}</p>
+              <Link
+                href={`/instructors/${course.teacherId}`}
+                className="font-medium text-white-100 hover:text-primary-400"
+              >
+                {course.teacherName}
+              </Link>
             </div>
           </section>
         </div>
