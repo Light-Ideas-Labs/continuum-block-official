@@ -347,6 +347,7 @@ declare global {
       id: string;
     };
     title: string;
+    description: string;
     startDate: Date | string;
     duration: string;
     type: "Full-Time" | "Part-Time";
