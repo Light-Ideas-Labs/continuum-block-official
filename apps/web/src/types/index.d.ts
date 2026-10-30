@@ -92,7 +92,7 @@ declare global {
   interface Transaction {
     _id: string;
     userId: string;
-    courseId: string;
+    courseId?: string;
     bootcampId?: string;
 
     amount: number; // Stored in cents

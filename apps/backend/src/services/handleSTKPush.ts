@@ -58,15 +58,15 @@ const generateMpesaCredentials = (): MpesaCredentials => {
 };
 
 const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<void> => {
-    const { phone, amount, courseId } = req.body;
+    const { phone, amount, courseId, bootcampId } = req.body;
     // Identity comes from the authenticated session, never the request body.
     const { userId } = getAuth(req);
-    console.log(`Initiating M-Pesa STK Push for user ${userId} to pay in USD ${amount} for course ${courseId}`)
+    console.log(`Initiating M-Pesa STK Push for user ${userId} to pay in USD ${amount} for ${courseId ? `course ${courseId}` : `bootcamp ${bootcampId}`}`)
 
     // Validate inputs
-    if (!phone || !amount || !courseId || !userId) {
+    if (!phone || !amount || (!courseId && !bootcampId) || !userId) {
       res.status(400).json({
-        message: "Missing required fields (phone, amount, courseId) or not authenticated",
+        message: "Missing required fields (phone, amount, courseId or bootcampId) or not authenticated",
       });
       return;
     }
@@ -103,7 +103,7 @@ const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<voi
     // 2. Create a pending transaction record
     const newTransaction = new Transaction({
       userId,
-      courseId,
+      ...(courseId ? { courseId } : { bootcampId }),
       dateTime: new Date().toISOString(),
       transactionId: `mpesa_${Date.now()}`,
       amount,
@@ -131,7 +131,7 @@ const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<voi
         PhoneNumber: phone,
         CallBackURL: callbackURL,
         AccountReference: "Continuum Block",
-        TransactionDesc: "Payment for course",
+        TransactionDesc: courseId ? "Payment for course" : "Payment for bootcamp",
     };
 
     // 5. Send STKPush request to M-Pesa API

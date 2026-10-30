@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction} from "express";
+import { clerkClient } from "@clerk/express";
 import Transaction from "../modules/transactions/model";
 import Course from "../modules/courses/model";
+import Bootcamp from "../modules/bootcamp/model";
 import CourseProgress from "../modules/course-progress/model";
+import { enrollMemberInBootcampCore } from "../modules/bootcamp/bootcamp.utils";
 
 interface PaymentResult {
   status: string;
@@ -65,28 +68,41 @@ const stkPushCallback = async (req: Request, res: Response, next: NextFunction):
     // Update transaction and handle course enrollment
     await handleTransactionResult(ResultCode, MpesaReceiptNumber, transaction, ResultDesc, res);
 
-    // Handle course enrollment and progress now that payment has succeeded
-    const course = await Course.findById(transaction.courseId);
-    if (course) {
-      // Add user to course enrollments
-      await Course.findByIdAndUpdate(transaction.courseId, { $push: { enrollments: transaction.userId } });
+    // Handle enrollment and progress now that payment has succeeded
+    if (transaction.courseId) {
+      const course = await Course.findById(transaction.courseId);
+      if (course) {
+        // Add user to course enrollments
+        await Course.findByIdAndUpdate(transaction.courseId, { $push: { enrollments: transaction.userId } });
 
-      // Create initial course progress
-      const initialProgress = new CourseProgress({
-        userId: transaction.userId,
-        courseId: transaction.courseId,
-        enrollmentDate: new Date().toISOString(),
-        overallProgress: 0,
-        sections: course.sections.map((section: any) => ({
-          sectionId: section.sectionId,
-          chapters: section.chapters.map((chapter: any) => ({
-            chapterId: chapter.chapterId,
-            completed: false,
+        // Create initial course progress
+        const initialProgress = new CourseProgress({
+          userId: transaction.userId,
+          courseId: transaction.courseId,
+          enrollmentDate: new Date().toISOString(),
+          overallProgress: 0,
+          sections: course.sections.map((section: any) => ({
+            sectionId: section.sectionId,
+            chapters: section.chapters.map((chapter: any) => ({
+              chapterId: chapter.chapterId,
+              completed: false,
+            })),
           })),
-        })),
-        lastAccessedTimestamp: new Date().toISOString(),
-      });
-      await initialProgress.save();
+          lastAccessedTimestamp: new Date().toISOString(),
+        });
+        await initialProgress.save();
+      }
+    } else if (transaction.bootcampId) {
+      try {
+        const clerkUser = await clerkClient.users.getUser(transaction.userId).catch(() => null);
+        const fullName =
+          [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") ||
+          clerkUser?.username ||
+          "Member";
+        await enrollMemberInBootcampCore(transaction.bootcampId.toString(), transaction.userId, fullName);
+      } catch (enrollError) {
+        console.error("Error enrolling member in bootcamp after payment:", enrollError);
+      }
     }
 
   } catch (error) {

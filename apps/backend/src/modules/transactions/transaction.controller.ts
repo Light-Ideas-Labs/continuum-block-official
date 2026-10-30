@@ -7,6 +7,7 @@ import Bootcamp from "../bootcamp/model";
 import Transaction from "./model";
 import CourseProgress from "../course-progress/model";
 import { initiateFlutterwavePayment } from "../../services/flutterwave.service";
+import { enrollMemberInBootcampCore } from "../bootcamp/bootcamp.utils";
 
 // if (!process.env.STRIPE_SECRET_KEY) {
 //   throw new Error(
@@ -157,7 +158,7 @@ const getTransactionById = async (req: Request, res: Response): Promise<void> =>
 // };
 
 const createTransaction = async (req: Request, res: Response): Promise<void> => {
-  const { courseId, transactionId, amount, paymentProvider } = req.body;
+  const { courseId, bootcampId, transactionId, amount, paymentProvider } = req.body;
   // Identity comes from the authenticated session, never the request body —
   // otherwise any caller could enroll/complete a free course as any userId.
   const { userId } = getAuth(req);
@@ -165,6 +166,51 @@ const createTransaction = async (req: Request, res: Response): Promise<void> => 
   try {
     if (!userId) {
       res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    if (bootcampId) {
+      // 1. get bootcamp info
+      const bootcamp = await Bootcamp.findById(bootcampId);
+
+      if (!bootcamp) {
+        res.status(404).json({
+          message: "Bootcamp not found",
+        });
+        return;
+      }
+
+      // 2. Check if the bootcamp is free
+      const isFreeBootcamp = !bootcamp.price?.amount;
+
+      // 3. create transaction record
+      const newTransaction = new Transaction({
+        dateTime: new Date().toISOString(),
+        userId,
+        bootcampId,
+        transactionId: isFreeBootcamp ? `free_${Date.now()}` : transactionId,
+        amount: isFreeBootcamp ? 0 : amount,
+        paymentProvider: isFreeBootcamp ? "Free" : paymentProvider,
+        status: isFreeBootcamp ? "Completed" : "Pending",
+      });
+      await newTransaction.save();
+
+      // 4. enroll the member if free (no CourseProgress equivalent for bootcamps)
+      if (isFreeBootcamp) {
+        const clerkUser = await clerkClient.users.getUser(userId).catch(() => null);
+        const fullName =
+          [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(" ") ||
+          clerkUser?.username ||
+          "Member";
+        await enrollMemberInBootcampCore(bootcampId, userId, fullName);
+      }
+
+      res.json({
+        message: "Purchased Bootcamp successfully",
+        data: {
+          transaction: newTransaction,
+        },
+      });
       return;
     }
 
