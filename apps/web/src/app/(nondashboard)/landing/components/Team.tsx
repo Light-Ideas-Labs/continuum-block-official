@@ -25,7 +25,7 @@ const teamList: TeamProps[] = [
     imageUrl: "https://res.cloudinary.com/dbfydlpwo/image/upload/v1741347307/continuum_block/hzpq5irvpbub7gxiibe0.jpg",
     name: "Jordan Muthemba",
     position: "Founder & Blockchain Trainer",
-    description: `“Blockchain isn&rsquo;t just a technological evolution; it&rsquo;s a cultural revolution... It&rsquo;s crucial we navigate not just with the intent to innovate, but also with a commitment to ethical practices that benefit all.”`,
+    description: `“Blockchain isn't just a technological evolution; it's a cultural revolution... It's crucial we navigate not just with the intent to innovate, but also with a commitment to ethical practices that benefit all.”`,
     socialNetworks: [
       {
         name: "Linkedin",
@@ -41,7 +41,7 @@ const teamList: TeamProps[] = [
     imageUrl: "https://i.pravatar.cc/150?img=35",
     name: "Michael Chege",
     position: "Marketing Strategist & co-Founder",
-    description: `“Blockchain isn&rsquo;tt just tech—it&rsquo;ts a bold shift redefining trust and transparency. From decentralized dreams to a future where fairness is built-in, it&rsquo;ts our chance to innovate responsibly. Join us to shape this equitable world.”`,
+    description: `“Blockchain isn't just tech—it's a bold shift redefining trust and transparency. From decentralized dreams to a future where fairness is built-in, it's our chance to innovate responsibly. Join us to shape this equitable world.”`,
     socialNetworks: [
       {
         name: "Linkedin",
@@ -105,7 +105,7 @@ const Team = () => {
       From coding new protocols to strategizing the blockchain&apos;s integration into everyday life, our pioneers are on the front lines, ensuring Continuum Block remains at the cutting edge of blockchain technology.
       </p>
 
-     <div className="flex justify-center">       {/* grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 gap-y-10 items-center */}
+     <div className="flex justify-center gap-8 mt-8">       {/* grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 gap-y-10 items-center */}
         {teamList.map(({ imageUrl, name, position, description, socialNetworks }: TeamProps) => (
           <Card
             key={name}

@@ -9,27 +9,24 @@ import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-
 const Navbar = ({ isCoursePage }: { isCoursePage: boolean }) => {
   const { user } = useUser();
   const userRole = user?.publicMetadata?.userType as "student" | "teacher";
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState(""); // State for input value
-  const [isFocused, setIsFocused] = useState(false); // Track input focus
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Handle form submission or Enter key press
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchQuery.trim()) {
       router.push(`/search?query=${encodeURIComponent(searchQuery.trim())}`, {
         scroll: false,
-      }); 
+      });
       setSearchQuery("");
     } else if (e.key === "Enter" && !searchQuery.trim()) {
       router.push("/search", { scroll: false });
     }
   };
-
 
   return (
     <nav className="dashboard-navbar">
@@ -41,9 +38,9 @@ const Navbar = ({ isCoursePage }: { isCoursePage: boolean }) => {
 
           <div className="flex items-center gap-4">
             <div className="relative group">
-            <div
+              <div
                 className={cn(
-                  "flex items-center w-full max-w-sm space-x-2 rounded-lg border border-gray-300 px-3.5 py-2",
+                  "flex items-center w-[280px] lg:w-[420px] space-x-2 rounded-md border border-gray-700 px-3 py-1",
                   "bg-customgreys-primarybg hover:bg-customgreys-darkerGrey transition-all duration-300",
                   {
                     "!bg-customgreys-secondarybg hover:!bg-customgreys-darkerGrey":
@@ -51,12 +48,12 @@ const Navbar = ({ isCoursePage }: { isCoursePage: boolean }) => {
                   }
                 )}
               >
-                <SearchIcon className="h-4 w-4 text-customgreys-dirtyGrey group-hover:text-white-50 transition-all duration-300" />
+                <SearchIcon className="h-3 w-3 text-customgreys-dirtyGrey group-hover:text-white-50 transition-all duration-300 flex-shrink-0" />
                 <Input
                   ref={inputRef}
                   type="search"
-                  placeholder="Search Courses"
-                  className="w-full border-0 h-8 font-semibold text-customgreys-dirtyGrey group-hover:text-white-50"
+                  placeholder="Search courses, bootcamps..."
+                  className="w-full border-0 h-5 text-sm text-customgreys-dirtyGrey group-hover:text-white-50 focus:outline-none bg-transparent placeholder:text-customgreys-dirtyGrey"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
@@ -65,8 +62,8 @@ const Navbar = ({ isCoursePage }: { isCoursePage: boolean }) => {
                 />
               </div>
               {isFocused && (
-                <div className="absolute left-0 mt-1 text-xs text-customgreys-dirtyGrey">
-                  Press Enter to search or go to course list
+                <div className="absolute left-0 mt-1 text-xs text-customgreys-dirtyGrey whitespace-nowrap">
+                  Press Enter to search
                 </div>
               )}
             </div>
@@ -75,7 +72,7 @@ const Navbar = ({ isCoursePage }: { isCoursePage: boolean }) => {
 
         <div className="dashboard-navbar__actions">
           <button className="nondashboard-navbar__notification-button">
-            <span className="nondashboard-navbar__notification-indicator"/>
+            <span className="nondashboard-navbar__notification-indicator" />
             <Bell className="nondashboard-navbar__notification-icon" />
           </button>
           <UserButton
@@ -88,19 +85,29 @@ const Navbar = ({ isCoursePage }: { isCoursePage: boolean }) => {
             }}
             showName={true}
             userProfileMode="navigation"
-            userProfileUrl={ userRole === "teacher" ? "/teacher/profile" : "/user/profile"}
+            userProfileUrl={
+              userRole === "teacher" ? "/teacher/profile" : "/user/profile"
+            }
           >
             <UserButton.MenuItems>
               <UserButton.Link
-              label="My Courses"
-              labelIcon={<BookOpen className="h-4 w-4" />}
-              href={userRole === "teacher" ? "/teacher/courses" : "/user/courses"}
-            />
-            <UserButton.Link
-            label="My Bootcamps"
-            labelIcon={<School className="h-4 w-4" />}
-            href={userRole === "teacher" ? "/teacher/bootcamps" : "/user/bootcamps"}
-            />
+                label="My Courses"
+                labelIcon={<BookOpen className="h-4 w-4" />}
+                href={
+                  userRole === "teacher"
+                    ? "/teacher/courses"
+                    : "/user/courses"
+                }
+              />
+              <UserButton.Link
+                label="My Bootcamps"
+                labelIcon={<School className="h-4 w-4" />}
+                href={
+                  userRole === "teacher"
+                    ? "/teacher/bootcamps"
+                    : "/user/bootcamps"
+                }
+              />
             </UserButton.MenuItems>
           </UserButton>
         </div>

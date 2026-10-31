@@ -284,6 +284,26 @@ export const api = createApi({
       }),
     }),
 
+    getTeacherStudents: build.query<TeacherStudent[], string>({
+      query: (teacherId) => ({
+        url: `transactions/${teacherId}/students`,
+        method: "GET",
+      }),
+      providesTags: ["Users", "Courses", "Bootcamps"],
+    }),
+
+    /* INSTRUCTORS */
+
+    listInstructors: build.query<InstructorSummary[], void>({
+      query: () => ({ url: "users/instructors" }),
+      providesTags: ["Users", "Courses", "Bootcamps"],
+    }),
+
+    getInstructor: build.query<InstructorDetail, string>({
+      query: (teacherId) => ({ url: `users/instructors/${teacherId}` }),
+      providesTags: (result, error, id) => [{ type: "Users", id }],
+    }),
+
     /* USER COURSE PROGRESS */
     getUserEnrolledCourses: build.query({
       query: (userId: string) => ({
@@ -449,6 +469,11 @@ export const {
   useGetTransactionsQuery,
   useInitiateMpesaPaymentMutation,
   // useCreateStripePaymentIntentMutation,
+
+  useGetTeacherStudentsQuery,
+
+  useListInstructorsQuery,
+  useGetInstructorQuery,
 
   useGetUserEnrolledCoursesQuery,
   useGetUserCourseProgressQuery,

@@ -6,7 +6,15 @@ const isStudentRoute = createRouteMatcher(["/user/(.*)"]);
 const isTeacherRoute = createRouteMatcher(["/teacher/(.*)"]);
 
 // Public routes
-const publicRoutes = ["/", "/forget-password", "/api/webhooks/clerk"];
+const publicRoutes = [
+  "/",
+  "/signin",
+  "/signup",
+  "/forgot-password",
+  "/verify-code",
+  "/reset-password",
+  "/api/webhooks/clerk",
+];
 
 export default clerkMiddleware(async (auth, req) => {
   // Check if the request matches any public route

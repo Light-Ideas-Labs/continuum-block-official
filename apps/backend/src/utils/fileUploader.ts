@@ -42,10 +42,12 @@ const pdffileFilter = (req: Request, file: File, cb: FileFilterCallback): void =
     }
 };
 
+const MB = 1024 * 1024;
+
 // Multer instances for handling file uploads
-const imageMulter: RequestHandler = multer({ storage: ImagefileStorage, fileFilter: ImagefileFilter }).single('image');
-const videoMulter: RequestHandler = multer({ storage: VideofileStorage, fileFilter: VideofileFilter }).single('video');
-const pdfMulter: RequestHandler = multer({ storage: pdffileStorage, fileFilter: pdffileFilter }).single('portfolio_pdf');
+const imageMulter: RequestHandler = multer({ storage: ImagefileStorage, fileFilter: ImagefileFilter, limits: { fileSize: 10 * MB } }).single('image');
+const videoMulter: RequestHandler = multer({ storage: VideofileStorage, fileFilter: VideofileFilter, limits: { fileSize: 1024 * MB } }).single('video');
+const pdfMulter: RequestHandler = multer({ storage: pdffileStorage, fileFilter: pdffileFilter, limits: { fileSize: 20 * MB } }).single('portfolio_pdf');
 
 export { 
     imageMulter, 
