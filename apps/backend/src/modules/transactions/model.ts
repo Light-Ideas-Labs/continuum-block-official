@@ -4,8 +4,8 @@ const transactionSchema = new Schema(
     {
       userId: { type: String, hashKey: true, required: true, },
       dateTime: { type: String, required: true, },
-      courseId: { type: Schema.Types.ObjectId, ref: "Courses", required: true, index: { name: "CourseTransactionsIndex", type: "global", }, },
-      bootcampId: { type: Schema.Types.ObjectId, ref: "Bootcamps", required: false, index: { name: "BootcampTransactionsIndex", type: "global", }, },// add bootcamp payment
+      courseId: { type: Schema.Types.ObjectId, ref: "Courses", required: false, index: { name: "CourseTransactionsIndex", type: "global", }, },
+      bootcampId: { type: Schema.Types.ObjectId, ref: "Bootcamps", required: false, index: { name: "BootcampTransactionsIndex", type: "global", }, },
       paymentProvider: { type: String, enum: ["Free", "Stripe", "M-Pesa", "M-Pesa-PayBill", "Co-op-Bank", "PayPal", "Flutterwave"], required: true, },
       status: { type: String, enum: ["Pending", "AwaitingVerification", "Completed", "Failed", "Refunded"], default: 'Pending' },
       resultInfo: {
@@ -44,5 +44,13 @@ const transactionSchema = new Schema(
     }
   );
   
+  transactionSchema.pre("validate", function (next) {
+    if (!this.courseId && !this.bootcampId) {
+      next(new Error("Either courseId or bootcampId is required"));
+      return;
+    }
+    next();
+  });
+
   const Transaction = mongoose.model("Transactions", transactionSchema);
   export default Transaction;

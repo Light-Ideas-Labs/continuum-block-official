@@ -1,6 +1,7 @@
 "use client";
 
 import CoursePreview from "@/components/CoursePreview";
+import BootcampCheckoutPreview from "@/components/BootcampCheckoutPreview";
 import { CustomFormField } from "@/components/CustomFormField";
 import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ const CheckoutDetailsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phone, setPhone] = useState("");
 
-  const { navigateToStep } = useCheckoutNavigation();
+  const { navigateToStep, type } = useCheckoutNavigation();
   const { course: selectedCourse, isLoading, isError } = useCurrentCourse();
   const searchParams = useSearchParams();
   const showSignUp = searchParams.get("showSignUp") === "true";
@@ -43,7 +44,7 @@ const CheckoutDetailsPage = () => {
       const transactionData: Partial<Transaction> = {
         transactionId: `free_${Date.now()}`,
         userId: "guest",
-        courseId: selectedCourse._id,
+        [type === "bootcamp" ? "bootcampId" : "courseId"]: selectedCourse._id,
         paymentProvider: 'Free',
         amount: selectedCourse.price || 0,
       };
@@ -71,7 +72,7 @@ const CheckoutDetailsPage = () => {
       const response = await initiateMpesaPayment({
         phone: normalizedPhone,
         amount: selectedCourse.price,
-        courseId: selectedCourse._id,
+        [type === "bootcamp" ? "bootcampId" : "courseId"]: selectedCourse._id,
         userId: "guest", // Replace with actual user ID from Clerk or auth
       }).unwrap();
 
@@ -106,7 +107,11 @@ const CheckoutDetailsPage = () => {
     <div className="checkout-details">
       <div className="checkout-details__container">
         <div className="checkout-details__preview">
-          <CoursePreview course={selectedCourse} />
+          {type === "bootcamp" ? (
+            <BootcampCheckoutPreview course={selectedCourse} />
+          ) : (
+            <CoursePreview course={selectedCourse} />
+          )}
         </div>
 
         {/* STRETCH FEATURE */}

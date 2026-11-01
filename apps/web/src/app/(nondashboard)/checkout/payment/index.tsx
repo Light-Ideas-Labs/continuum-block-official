@@ -7,6 +7,7 @@ import { useCheckoutNavigation } from "@/hooks/useCheckoutNavigation";
 import { useCurrentCourse } from "@/hooks/useCurrentCourse";
 import { useClerk, useUser } from "@clerk/nextjs";
 import CoursePreview from "@/components/CoursePreview";
+import BootcampCheckoutPreview from "@/components/BootcampCheckoutPreview";
 import { CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCreateTransactionMutation, useInitiateMpesaPaymentMutation } from "@/state/api";
@@ -37,7 +38,7 @@ const PaymentPageContent = () => {
   const [createTransaction] = useCreateTransactionMutation();
   const [initiateMpesaPayment] = useInitiateMpesaPaymentMutation();
 
-  const { navigateToStep } = useCheckoutNavigation();
+  const { navigateToStep, type } = useCheckoutNavigation();
   const { course, courseId } = useCurrentCourse();
   const { user } = useUser();
   const { signOut } = useClerk();
@@ -55,7 +56,7 @@ const PaymentPageContent = () => {
         const transactionData: Partial<Transaction> = {
             transactionId: `free_${Date.now()}`,
             userId: user?.id,
-            courseId: courseId,
+            [type === "bootcamp" ? "bootcampId" : "courseId"]: courseId,
             paymentProvider: 'Free',
             amount: course.price || 0,
         };
@@ -79,9 +80,9 @@ const PaymentPageContent = () => {
 
     try {
       const response = await initiateMpesaPayment({
-        phone: normalizedPhone, 
+        phone: normalizedPhone,
         amount: course.price, // Send raw price in cents (e.g., 100 for $1.00) the conversion KES happens in the backend
-        courseId: courseId,
+        [type === "bootcamp" ? "bootcampId" : "courseId"]: courseId,
         userId: user.id,
       }).unwrap();
 
@@ -176,7 +177,11 @@ const PaymentPageContent = () => {
       <div className="payment__container">
         {/* Order Summary */}
         <div className="payment__preview">
-          <CoursePreview course={course} />
+          {type === "bootcamp" ? (
+            <BootcampCheckoutPreview course={course} />
+          ) : (
+            <CoursePreview course={course} />
+          )}
         </div>
 
         {/* Pyament Form */}
