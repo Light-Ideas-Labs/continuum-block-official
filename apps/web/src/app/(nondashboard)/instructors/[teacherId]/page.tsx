@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Star, BookOpen, Users } from "lucide-react";
@@ -108,9 +109,10 @@ const InstructorDetailPage = () => {
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {instructor.bootcamps.map((bootcamp) => (
-              <div
+              <Link
                 key={bootcamp._id}
-                className="flex flex-col overflow-hidden rounded-lg border border-customgreys-darkerGrey bg-customgreys-secondarybg"
+                href={`/bootcamps/${bootcamp._id}`}
+                className="group flex flex-col overflow-hidden rounded-lg border border-customgreys-darkerGrey bg-customgreys-secondarybg transition-colors hover:border-primary-700"
               >
                 <div className="relative aspect-video w-full bg-customgreys-primarybg">
                   <Image
@@ -125,9 +127,11 @@ const InstructorDetailPage = () => {
                   <Badge variant="outline" className="mb-2 border-customgreys-darkerGrey text-xs font-normal text-customgreys-dirtyGrey">
                     Bootcamp
                   </Badge>
-                  <h3 className="font-semibold text-white-100">{bootcamp.title}</h3>
+                  <h3 className="font-semibold text-white-100 group-hover:text-primary-400">
+                    {bootcamp.title}
+                  </h3>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
