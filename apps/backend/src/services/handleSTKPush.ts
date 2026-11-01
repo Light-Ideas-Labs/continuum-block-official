@@ -2,6 +2,7 @@ import { Response } from "express";
 import * as dotenv from 'dotenv';
 import axios from "axios";
 import crypto from "crypto"; // For generating a unique hash for each transaction
+import { getAuth } from "@clerk/express";
 
 dotenv.config();
 
@@ -56,31 +57,36 @@ const generateMpesaCredentials = (): MpesaCredentials => {
   };
 };
 
-const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<void> => { 
-    const { phone, amount, courseId, userId } = req.body;
-    console.log(`Initiating M-Pesa STK Push for user ${userId} to pay in USD ${amount} for course ${courseId}`)
+const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<void> => {
+    const { phone, amount, courseId, bootcampId } = req.body;
+    // Identity comes from the authenticated session, never the request body.
+    const { userId } = getAuth(req);
+    console.log(`Initiating M-Pesa STK Push for user ${userId} to pay in USD ${amount} for ${courseId ? `course ${courseId}` : `bootcamp ${bootcampId}`}`)
 
     // Validate inputs
-    if (!phone || !amount || !courseId || !userId) {
+    if (!phone || !amount || (!courseId && !bootcampId) || !userId) {
       res.status(400).json({
-        message: "Missing required fields (phone, amount, courseId, userId)",
+        message: "Missing required fields (phone, amount, courseId or bootcampId) or not authenticated",
       });
+      return;
     }
-    
+
     // Validate phone number (Kenyan format, e.g., +2547XXXXXXXX or 2547XXXXXXXX)
     const phoneRegex = /^(\+254|254)?7\d{8}$/;
     if (!phoneRegex.test(phone)) {
       res.status(400).json({
         message: "Invalid Kenyan phone number format. Use +2547XXXXXXXX or 2547XXXXXXXX",
       });
+      return;
    }
-   
+
    // Validate amount (minimum USD 0.01, converted to at least KES 1)
    const amountInCents = Math.round(parseFloat(amount) / 100); // Convert USD to cents (e.g., 100 USD = 1.00 cents)
    if (amountInCents < 1) { // Check minimum after conversion to cents
     res.status(400).json({
       message: "Amount must be at least USD 0.01 (equivalent to KES 1 or more)",
     });
+    return;
   }
 
 
@@ -97,13 +103,14 @@ const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<voi
     // 2. Create a pending transaction record
     const newTransaction = new Transaction({
       userId,
-      courseId,
+      ...(courseId ? { courseId } : { bootcampId }),
       dateTime: new Date().toISOString(),
       transactionId: `mpesa_${Date.now()}`,
       amount,
       paymentProvider: "M-Pesa",
       status: "Pending",
       resultInfo: {},
+      callbackHash,
     });
     
     await newTransaction.save();
@@ -124,7 +131,7 @@ const initiateSTKPush = async (req: RequestExtended, res: Response): Promise<voi
         PhoneNumber: phone,
         CallBackURL: callbackURL,
         AccountReference: "Continuum Block",
-        TransactionDesc: "Payment for course",
+        TransactionDesc: courseId ? "Payment for course" : "Payment for bootcamp",
     };
 
     // 5. Send STKPush request to M-Pesa API

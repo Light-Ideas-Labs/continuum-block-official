@@ -1,11 +1,49 @@
 import { Request, Response } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 
 import { getVideoDuration, formatDuration } from "../../utils/getVideoDuration";
-import  { cloudinary } from "../../config/cloudinary.config";	
+import  { cloudinary } from "../../config/cloudinary.config";
 import Course from "./model";
+
+// Full access = the course owner, an admin, or someone with a completed
+// enrollment. Everyone else only gets the redacted preview (see below).
+const hasFullCourseAccess = async (course: any, req: Request): Promise<boolean> => {
+    const { userId } = getAuth(req);
+    if (!userId) return false;
+    if (course.teacherId?.toString() === userId) return true;
+
+    const enrolled = (course.enrollments || []).some((e: any) =>
+        (typeof e === "string" ? e : e?.userId) === userId
+    );
+    if (enrolled) return true;
+
+    const user = await clerkClient.users.getUser(userId).catch(() => null);
+    return ((user?.publicMetadata?.userType as string) || "student") === "admin";
+};
+
+// Strip everything that lets a non-enrolled viewer consume paid content or
+// see quiz answers — keep only what a marketing/curriculum-outline page needs.
+const toPreviewCourse = (course: any) => {
+    const obj = typeof course.toObject === "function" ? course.toObject() : course;
+    return {
+        ...obj,
+        sections: (obj.sections || []).map((section: any) => ({
+            sectionId: section.sectionId,
+            sectionTitle: section.sectionTitle,
+            sectionDescription: section.sectionDescription,
+            duration: section.duration,
+            chapters: (section.chapters || []).map((chapter: any) => ({
+                chapterId: chapter.chapterId,
+                type: chapter.type,
+                title: chapter.title,
+                duration: chapter.duration,
+                locked: true,
+            })),
+        })),
+    };
+};
 
 const createCourse = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -102,13 +140,15 @@ const getCourse = async (req: Request, res: Response): Promise<void> => {
             res.status(404).json({
                 message: "Course not found",
             })
-            
+
             return
         }
-        
+
+        const fullAccess = await hasFullCourseAccess(course, req);
+
         res.status(200).json({
             message: "Course retrieved successfully",
-            data: course,
+            data: fullAccess ? course : toPreviewCourse(course),
         });
     } catch (error) {
         console.error(error);
@@ -414,7 +454,13 @@ const addReview = async (req: Request, res: Response): Promise<void> => {
 const getChapterQuizzes = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courseId, chapterId } = req.params;
-  
+
+      const { userId } = getAuth(req);
+      if (!userId) {
+        res.status(401).json({ message: "Authentication required" });
+        return;
+      }
+
       // Find the course
       const course = await Course.findById(courseId);
       if (!course) {
@@ -423,7 +469,14 @@ const getChapterQuizzes = async (req: Request, res: Response): Promise<void> => 
         });
         return;
       }
-  
+
+      if (!(await hasFullCourseAccess(course, req))) {
+        res.status(403).json({
+          message: "You must be enrolled in this course to access its quizzes",
+        });
+        return;
+      }
+
       // Find the chapter within the course
       let targetChapter = null;
       for (const section of course.sections) {
@@ -454,6 +507,8 @@ const getChapterQuizzes = async (req: Request, res: Response): Promise<void> => 
         {
           id: `quiz-${chapterId}`, // Generate a quiz ID (you can modify this logic)
           chapterId,
+          // correctAnswer is intentionally never included here — the
+          // answer key must not reach the client before it submits.
           questions: targetChapter.quiz.map((question: any) => ({
             id: question.questionId,
             question: question.text,
@@ -461,7 +516,6 @@ const getChapterQuizzes = async (req: Request, res: Response): Promise<void> => 
               label: option.text,
               value: option.optionId,
             })),
-            correctAnswer: question.options.find((option: any) => option.isCorrect)?.optionId || "",
           })),
         },
       ];
@@ -483,16 +537,22 @@ const getChapterQuizzes = async (req: Request, res: Response): Promise<void> => 
 const submitQuizResponse = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courseId, chapterId, quizId } = req.params;
-      const { questionId, answer, userId } = req.body;
-  
+      const { questionId, answer } = req.body;
+      const { userId } = getAuth(req);
+
+      if (!userId) {
+        res.status(401).json({ message: "Authentication required" });
+        return;
+      }
+
       // Validate input
-      if (!questionId || !answer || !userId) {
+      if (!questionId || !answer) {
         res.status(400).json({
-          message: "questionId, answer, and userId are required",
+          message: "questionId and answer are required",
         });
         return;
       }
-  
+
       // Find the course
       const course = await Course.findById(courseId);
       if (!course) {
@@ -501,7 +561,14 @@ const submitQuizResponse = async (req: Request, res: Response): Promise<void> =>
         });
         return;
       }
-  
+
+      if (!(await hasFullCourseAccess(course, req))) {
+        res.status(403).json({
+          message: "You must be enrolled in this course to submit quiz answers",
+        });
+        return;
+      }
+
       // Find the chapter
       let targetChapter = null;
       for (const section of course.sections) {

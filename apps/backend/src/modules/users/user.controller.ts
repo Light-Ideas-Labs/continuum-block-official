@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { clerkClient } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
 
 import User from "./model"
 
@@ -114,6 +114,17 @@ const syncUser = async (req: Request, res: Response): Promise<void> => {
 const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
+    const { userId: authUserId } = getAuth(req);
+
+    // Only the user themself, or an admin, may delete this account.
+    if (authUserId !== userId) {
+      const requester = authUserId ? await clerkClient.users.getUser(authUserId) : null;
+      const requesterRole = (requester?.publicMetadata?.userType as string) || "student";
+      if (requesterRole !== "admin") {
+        res.status(403).json({ message: "You can only delete your own account" });
+        return;
+      }
+    }
 
     // Delete user from Clerk
     await clerkClient.users.deleteUser(userId);
@@ -136,19 +147,27 @@ const deleteUser = async (req: Request, res: Response): Promise<void> => {
 const updateUser = async (req: Request, res: Response): Promise<void> => {
     try {
         const { userId } = req.params;
+        const { userId: authUserId } = getAuth(req);
         const userData = req.body;
 
-        console.log("userdata", userData)
+        // Only the user themself, or an admin, may update this profile.
+        if (authUserId !== userId) {
+          const requester = authUserId ? await clerkClient.users.getUser(authUserId) : null;
+          const requesterRole = (requester?.publicMetadata?.userType as string) || "student";
+          if (requesterRole !== "admin") {
+            res.status(403).json({ message: "You can only update your own profile" });
+            return;
+          }
+        }
 
         // Step 1: Update the user in Clerk
+        // NOTE: role/userType is intentionally not settable here — use the
+        // admin-only PUT /promote-role/:userId endpoint to change roles.
         const clerkUser = await clerkClient.users.updateUserMetadata(userId, {
             publicMetadata: {
-              userType: userData.publicMetadata.userType,
-              settings: userData.publicMetadata.settings,
+              settings: userData?.publicMetadata?.settings,
             },
           });
-
-        console.log("clerkUser", clerkUser)
 
         // Step 2: Update the user in MongoDB
         const mongoUserUpdate = {
@@ -156,7 +175,6 @@ const updateUser = async (req: Request, res: Response): Promise<void> => {
             lastName: clerkUser.lastName || undefined,
             email: clerkUser.emailAddresses[0]?.emailAddress || undefined,
             isVerified: clerkUser.emailAddresses[0]?.verification?.status === "verified",
-            userType: userData.userType || "student",
             clerkMetadata: clerkUser.publicMetadata || {},
           };
 
@@ -181,15 +199,24 @@ const updateUser = async (req: Request, res: Response): Promise<void> => {
     }
 }
 
+const ALLOWED_ROLES = ["student", "teacher", "admin"];
+
 const promoteUserRole = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
-    const { role } = req.body; // e.g., 'admin', 'teacher'
+    const { role } = req.body; // 'student' | 'teacher' | 'admin'
 
-    // Update role in Clerk
+    if (!ALLOWED_ROLES.includes(role)) {
+      res.status(400).json({
+        message: `role must be one of: ${ALLOWED_ROLES.join(", ")}`,
+      });
+      return;
+    }
+
+    // Update role in Clerk (userType is the convention used elsewhere in this codebase)
     await clerkClient.users.updateUserMetadata(userId, {
       publicMetadata: {
-        role,
+        userType: role,
       },
     });
 

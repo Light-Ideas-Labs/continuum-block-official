@@ -1,5 +1,10 @@
+import AuthShell from "@/components/auth/AuthShell";
 import SignInComponent from "@/components/SignIn";
 
 export default function Page() {
-  return <SignInComponent />;
+  return (
+    <AuthShell>
+      <SignInComponent />
+    </AuthShell>
+  );
 }

@@ -1,12 +1,9 @@
-"use client";
-
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import React from "react";
 
-const BootcampPreview = ({ bootcamp }: BootcampPreviewProps) => {
-  const price = formatPrice(bootcamp.price.amount);
-
+const BootcampCheckoutPreview = ({ course: bootcamp }: CoursePreviewProps) => {
+  const price = formatPrice(bootcamp.price);
   return (
     <div className="course-preview">
       <div className="course-preview__container">
@@ -21,27 +18,17 @@ const BootcampPreview = ({ bootcamp }: BootcampPreviewProps) => {
         </div>
         <div>
           <h2 className="course-preview__title">{bootcamp.title}</h2>
-          <p className="text-gray-400 text-md mb-4">Hosted by {bootcamp.hostedBy.name}</p>
+          <p className="text-gray-400 text-md mb-4">Hosted by {bootcamp.teacherName}</p>
           <p className="text-sm text-customgreys-dirtyGrey">
-            {/* {bootcamp.description} */}
-          </p>
-        </div>
-
-        <div className="mt-4">
-          <h4 className="text-white-50/90 font-semibold mb-2">Details</h4>
-          <p className="text-customgreys-dirtyGrey text-sm">
-            Duration: {bootcamp.duration} | Mode: {bootcamp.deliveryMode}
-          </p>
-          <p className="text-customgreys-dirtyGrey text-sm mt-1">
-            Includes Certification: {bootcamp.certification}
+            {bootcamp.description}
           </p>
         </div>
       </div>
 
       <div className="course-preview__container">
-        <h3 className="text-xl mb-4">Price Details</h3>
+        <h3 className="text-xl mb-4">Price Details (1 item)</h3>
         <div className="flex justify-between mb-4 text-customgreys-dirtyGrey text-base">
-          <span className="font-bold">{bootcamp.title}</span>
+          <span className="font-bold">1x {bootcamp.title}</span>
           <span className="font-bold">{price}</span>
         </div>
         <div className="flex justify-between border-t border-customgreys-dirtyGrey pt-4">
@@ -53,4 +40,4 @@ const BootcampPreview = ({ bootcamp }: BootcampPreviewProps) => {
   );
 };
 
-export default BootcampPreview;
+export default BootcampCheckoutPreview;

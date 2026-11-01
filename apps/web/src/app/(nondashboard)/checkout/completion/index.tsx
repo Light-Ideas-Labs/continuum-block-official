@@ -1,11 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useCheckoutNavigation } from "@/hooks/useCheckoutNavigation";
 import { Check } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
 const CompletionPage = () => {
+  const { type } = useCheckoutNavigation();
+  const isBootcamp = type === "bootcamp";
+
   return (
     <div className="completion">
       <div className="completion__content">
@@ -14,7 +18,9 @@ const CompletionPage = () => {
         </div>
         <h1 className="completion__title">COMPLETED</h1>
         <p className="completion__message">
-          🎉 You have made a course purchase successfully! 🎉
+          {isBootcamp
+            ? "🎉 You have enrolled in the bootcamp successfully! 🎉"
+            : "🎉 You have made a course purchase successfully! 🎉"}
         </p>
       </div>
       <div className="completion__support">
@@ -27,8 +33,8 @@ const CompletionPage = () => {
         </p>
       </div>
       <div className="completion__action">
-        <Link href="user/courses" scroll={false}>
-          Go to Courses
+        <Link href={isBootcamp ? "/user/bootcamps" : "user/courses"} scroll={false}>
+          {isBootcamp ? "Go to Bootcamps" : "Go to Courses"}
         </Link>
       </div>
     </div>

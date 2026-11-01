@@ -2,9 +2,10 @@ import { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
 import fs from "fs";
 
-import  { cloudinary } from "../../config/cloudinary.config";	
+import  { cloudinary } from "../../config/cloudinary.config";
 import Bootcamp from "./model";
-import Course from "../courses/model"; 
+import Course from "../courses/model";
+import { enrollMemberInBootcampCore } from "./bootcamp.utils";
 
 // Create a new bootcamp
 const createBootcamp = async (req: Request, res: Response): Promise<void> => {
@@ -313,42 +314,15 @@ const enrollMemberInBootcamp = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const bootcamp = await Bootcamp.findById({ bootcampId });
-    if (!bootcamp) {
-      res.status(404).json({
-        message: "Bootcamp not found",
-      });
+    const result = await enrollMemberInBootcampCore(bootcampId, memberId, fullName);
+    if (!result.ok) {
+      res.status(result.status).json({ message: result.message });
       return;
     }
-
-    if (bootcamp.enrollmentStatus !== "Open") {
-      res.status(400).json({
-        message: "Enrollment is closed for this bootcamp",
-      });
-      return;
-    }
-
-    // Check if the member is already enrolled
-    const memberExists = bootcamp.members.some((m: any) => m.memberId === memberId);
-    if (memberExists) {
-      res.status(400).json({
-        message: "Member already enrolled in this bootcamp",
-      });
-      return;
-    }
-
-    // Add the member to the bootcamp
-    bootcamp.members.push({
-      memberId,
-      fullName,
-      progress: 0, // Default progress
-    });
-
-    await bootcamp.save();
 
     res.status(200).json({
       message: "Member enrolled in bootcamp successfully",
-      data: bootcamp,
+      data: result.bootcamp,
     });
   } catch (error) {
     console.error("Error enrolling member in bootcamp:", error);
@@ -370,7 +344,7 @@ const removeMemberFromBootcamp = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const bootcamp = await Bootcamp.findById({ bootcampId });
+    const bootcamp = await Bootcamp.findById(bootcampId);
     if (!bootcamp) {
       res.status(404).json({
         message: "Bootcamp not found",

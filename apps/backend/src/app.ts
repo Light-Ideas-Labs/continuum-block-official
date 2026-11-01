@@ -7,7 +7,6 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import { rateLimit } from "express-rate-limit";
 
 export const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY,
@@ -15,14 +14,7 @@ export const clerkClient = createClerkClient({
 
 // import routes v1
 import { routeV1 } from './routes/index'
-
-// api requests limit
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: "draft-7",
-  legacyHeaders: false,
-});
+import { apiLimiter } from './middlewares/rateLimiters'
 
 const app: Express = express();
 
@@ -31,7 +23,6 @@ const corsOptions = {
     "https://www.continuumblock.org",
     "https://continuum-block-official-web.vercel.app",
     "http://localhost:3000", // Local frontend
-    "https://your-ngrok-url", // Ngrok for local testing
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -47,10 +38,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(clerkMiddleware());
-app.use(limiter);
+app.use(apiLimiter);
 
 // define the health check route
-app.get('/health', async (req: Request, res: Response): Promise<void> => {
+app.get('/healthz', async (req: Request, res: Response): Promise<void> => {
   try {
       // Check MongoDB connection status
       const mongoStatus: boolean = mongoose.connection.readyState === 1;
@@ -80,5 +71,25 @@ app.get("/", (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use(routeV1) // routing v1
+
+// 404 — no route matched
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+});
+
+// Centralized error handler — catches anything passed to next(err) and any
+// error a route forgot to catch itself, so raw error objects/stack traces
+// never leak to the client.
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  console.error("Unhandled error:", err);
+
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  const message = err instanceof Error ? err.message : "Internal server error";
+  res.status(500).json({ message: "Internal server error", error: message });
+});
 
 export default app;

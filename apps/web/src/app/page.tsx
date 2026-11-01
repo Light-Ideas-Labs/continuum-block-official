@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <div className="nondashboard-layout">
       <NonDashboardNavbar />
-      <main className="">
+      <main className="w-full flex flex-col items-center">
         <Landing />
       </main>
       <Footer />

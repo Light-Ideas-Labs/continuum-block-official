@@ -180,7 +180,7 @@ export const api = createApi({
       providesTags: ["Bootcamps"],
     }),
 
-    getBootcamp: build.query({
+    getBootcamp: build.query<Bootcamp, string>({
       query: (id) => ({
         url: `bootcamps/${id}`,
         method: "GET",
@@ -276,12 +276,32 @@ export const api = createApi({
     // }),
 
     /* M-PESA PAYMENT INTEGRATION */
-    initiateMpesaPayment: build.mutation<any, { phone: string; amount: number; courseId: string; userId: string }>({
+    initiateMpesaPayment: build.mutation<any, { phone: string; amount: number; courseId?: string; bootcampId?: string; userId: string }>({
       query: (paymentData) => ({
         url: "transactions/mpesa/stkpush",
         method: "POST",
         body: paymentData,
       }),
+    }),
+
+    getTeacherStudents: build.query<TeacherStudent[], string>({
+      query: (teacherId) => ({
+        url: `transactions/${teacherId}/students`,
+        method: "GET",
+      }),
+      providesTags: ["Users", "Courses", "Bootcamps"],
+    }),
+
+    /* INSTRUCTORS */
+
+    listInstructors: build.query<InstructorSummary[], void>({
+      query: () => ({ url: "users/instructors" }),
+      providesTags: ["Users", "Courses", "Bootcamps"],
+    }),
+
+    getInstructor: build.query<InstructorDetail, string>({
+      query: (teacherId) => ({ url: `users/instructors/${teacherId}` }),
+      providesTags: (result, error, id) => [{ type: "Users", id }],
     }),
 
     /* USER COURSE PROGRESS */
@@ -449,6 +469,11 @@ export const {
   useGetTransactionsQuery,
   useInitiateMpesaPaymentMutation,
   // useCreateStripePaymentIntentMutation,
+
+  useGetTeacherStudentsQuery,
+
+  useListInstructorsQuery,
+  useGetInstructorQuery,
 
   useGetUserEnrolledCoursesQuery,
   useGetUserCourseProgressQuery,
